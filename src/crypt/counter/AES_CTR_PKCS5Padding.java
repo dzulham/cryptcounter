@@ -12,15 +12,14 @@ public final class AES_CTR_PKCS5Padding {
 
     public static final String CIPHER_MODE = "AES/CTR/PKCS5PADDING";
     public static byte[] IV;
+    private final Cipher cipher;
 
-    public AES_CTR_PKCS5Padding() throws NoSuchAlgorithmException, NoSuchPaddingException {
+    public AES_CTR_PKCS5Padding() throws NoSuchAlgorithmException, NoSuchPaddingException 
+    {
+        cipher = Cipher.getInstance(AES_CTR_PKCS5Padding.CIPHER_MODE);
         SecureRandom srandom = SecureRandom.getInstance("SHA1PRNG");
-        AES_CTR_PKCS5Padding.IV = new byte[chiper().getBlockSize()];
+        AES_CTR_PKCS5Padding.IV = new byte[cipher.getBlockSize()];
         srandom.nextBytes(AES_CTR_PKCS5Padding.IV);
-    }
-    
-    public Cipher chiper() throws NoSuchAlgorithmException, NoSuchPaddingException {
-        return Cipher.getInstance(AES_CTR_PKCS5Padding.CIPHER_MODE);
     }
     
     public String encrypt(String key, String value) {
@@ -28,9 +27,9 @@ public final class AES_CTR_PKCS5Padding {
             IvParameterSpec iv = new IvParameterSpec(AES_CTR_PKCS5Padding.IV);
             SecretKeySpec skeySpec = new SecretKeySpec(key.getBytes("UTF-8"), "AES");
 
-            chiper().init(Cipher.ENCRYPT_MODE, skeySpec, iv);
+            cipher.init(Cipher.ENCRYPT_MODE, skeySpec, iv);
 
-            byte[] encrypted = chiper().doFinal(value.getBytes());
+            byte[] encrypted = cipher.doFinal(value.getBytes());
             
             return Base64.getEncoder().encodeToString(encrypted);
         } catch (Exception ex) {
@@ -45,9 +44,9 @@ public final class AES_CTR_PKCS5Padding {
             IvParameterSpec iv = new IvParameterSpec(AES_CTR_PKCS5Padding.IV);
             SecretKeySpec skeySpec = new SecretKeySpec(key.getBytes("UTF-8"), "AES");
 
-            chiper().init(Cipher.DECRYPT_MODE, skeySpec, iv);
+            cipher.init(Cipher.DECRYPT_MODE, skeySpec, iv);
 
-            byte[] original = chiper().doFinal(Base64.getDecoder().decode(encrypted));
+            byte[] original = cipher.doFinal(Base64.getDecoder().decode(encrypted));
 
             return new String(original);
         } catch (Exception ex) {
