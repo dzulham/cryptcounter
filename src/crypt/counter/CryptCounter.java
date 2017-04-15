@@ -5,23 +5,22 @@
  */
 package crypt.counter;
 
-import java.security.NoSuchAlgorithmException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Application;
-import javafx.event.ActionEvent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.stage.Stage;
-
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.ColumnConstraints;
-import javafx.scene.layout.GridPane;
+import javafx.scene.control.TextArea;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
+
 import javax.crypto.NoSuchPaddingException;
+import java.security.NoSuchAlgorithmException;
+import javafx.event.ActionEvent;
+import javafx.geometry.Insets;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 
 /**
  *
@@ -32,65 +31,63 @@ public class CryptCounter extends Application {
     @Override
     public void start(Stage primaryStage) {
         
-        primaryStage.setTitle("Crypt.Counter v0.2");
+        primaryStage.setTitle("Crypt.Counter v0.5");
         
-        GridPane grid = new GridPane();
-        grid.setAlignment(Pos.CENTER);
-        grid.setPadding(new Insets(10));
-        grid.setHgap(10);
-        grid.setVgap(10);
+        VBox root = new VBox();
+        root.setPadding(new Insets(20));
+        root.setSpacing(10);
         
-        TextField plaintextField = new TextField();
+        TextArea plaintextField = new TextArea();
         plaintextField.setPromptText("Plaintext/Ciphertext");
-        grid.add(plaintextField, 0, 1);
+        plaintextField.setWrapText(true);
 
         TextField keyField = new TextField();
         keyField.setPromptText("Key");
-        grid.add(keyField, 1, 1);
         
-        TextField encryptedField = new TextField();
-        encryptedField.setEditable(false);
-        encryptedField.setPromptText("Encrypted");
-        grid.add(encryptedField, 0, 3);
-        
-        TextField decryptedField = new TextField();
-        decryptedField.setEditable(false);
-        decryptedField.setPromptText("Decrypted");
-        grid.add(decryptedField, 1, 3);
+        TextArea resultField = new TextArea();
+        resultField.setEditable(false);
+        resultField.setPromptText("Result");
+        resultField.setWrapText(true);
         
         Text logText = new Text();
         logText.setFill(Color.FIREBRICK);
-        grid.add(logText, 0, 5, 2, 2);
+        
+        HBox buttons = new HBox();
+        buttons.setSpacing(10);
         
         Button encBtn = new Button("Encrypt");
-        encBtn.setOnAction((event) -> {
+        encBtn.setMaxWidth(Double.MAX_VALUE);
+        encBtn.setOnAction((ActionEvent event) -> {
             String log = "";
             try {
                 String m = AES_CTR_PKCS5Padding.encrypt(keyField.getText(), plaintextField.getText());
-                encryptedField.setText(m);
+                resultField.setText(m);
             } catch (Exception e) {
-               log = e.getMessage();
+                log = e.getMessage();
             }
             logText.setText(log);
         });
-        encBtn.setMaxWidth(Double.MAX_VALUE);
-        grid.add(encBtn, 0, 2);
         
         Button decBtn = new Button("Decrypt");
+        decBtn.setMaxWidth(Double.MAX_VALUE);
         decBtn.setOnAction((event) -> {
             String log = "";
             try {
                 String m = AES_CTR_PKCS5Padding.decrypt(keyField.getText(), plaintextField.getText());
-                encryptedField.setText(m);
+                resultField.setText(m);
             } catch (Exception e) {
-               log = e.getMessage();
+                log = e.getMessage();
             }
             logText.setText(log);
         });
-        decBtn.setMaxWidth(Double.MAX_VALUE);
-        grid.add(decBtn, 1, 2);
-
-        Scene scene = new Scene(grid, 300, 275);
+        buttons.getChildren().addAll(encBtn, decBtn);
+        HBox.setHgrow(encBtn, Priority.ALWAYS);
+        HBox.setHgrow(decBtn, Priority.ALWAYS);
+        
+        root.getChildren().addAll(plaintextField, keyField, buttons, resultField, logText);
+        
+        Scene scene = new Scene(root, 400, 300);
+        primaryStage.setResizable(false);
         primaryStage.setScene(scene);
         primaryStage.show();
     }
@@ -104,5 +101,4 @@ public class CryptCounter extends Application {
         AES_CTR_PKCS5Padding.init();
         launch(args);
     }
-    
 }
