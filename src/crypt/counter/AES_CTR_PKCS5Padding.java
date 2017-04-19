@@ -2,7 +2,6 @@ package crypt.counter;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.Base64;
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
@@ -34,23 +33,23 @@ public final class AES_CTR_PKCS5Padding
             CIPHER = Cipher.getInstance(AES_CTR_PKCS5Padding.CIPHER_ALGORITHM);
     }
     
-    public static String encrypt(String key, String value) throws Exception
+    public static byte[] encrypt(byte[] key, byte[] value) throws Exception
     {
         assertCIPHER();
         IvParameterSpec iv = new IvParameterSpec(AES_CTR_PKCS5Padding.IV);
-        SecretKeySpec skeySpec = new SecretKeySpec(key.getBytes("UTF-8"), "AES");
+        SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
         CIPHER.init(Cipher.ENCRYPT_MODE, skeySpec, iv);
-        byte[] encrypted = CIPHER.doFinal(value.getBytes());
-        return Base64.getEncoder().encodeToString(encrypted);
+        byte[] encrypted = CIPHER.doFinal(value);
+        return encrypted;
     }
 
-    public static String decrypt(String key, String encrypted) throws Exception
+    public static byte[] decrypt(byte[] key, byte[] encrypted) throws Exception
     {
         assertCIPHER();
         IvParameterSpec iv = new IvParameterSpec(AES_CTR_PKCS5Padding.IV);
-        SecretKeySpec skeySpec = new SecretKeySpec(key.getBytes("UTF-8"), "AES");
+        SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
         CIPHER.init(Cipher.DECRYPT_MODE, skeySpec, iv);
-        byte[] original = CIPHER.doFinal(Base64.getDecoder().decode(encrypted));
-        return new String(original);
+        byte[] original = CIPHER.doFinal(encrypted);
+        return original;
     }
 }

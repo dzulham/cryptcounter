@@ -1,6 +1,10 @@
 package crypt.counter;
 
 import java.io.File;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -38,7 +42,7 @@ public class CryptCounter extends Application {
     
     private static File inputFile = null;
     private static File outputFile = null;
-    private static File keyFile = null;
+    private static String key = null;
     
     private static TextArea logs = null;
     
@@ -108,6 +112,16 @@ public class CryptCounter extends Application {
         return fileChooser;
     }
     
+    public static byte[] readFile(File file) throws IOException {
+        byte[] array = Files.readAllBytes(file.toPath());
+        return array;
+    }
+    
+    public static byte[] stringToHex(String hexString) throws IOException {
+        byte[] array = new BigInteger(hexString, 16).toByteArray();
+        return array;
+    }
+    
     public static Node createInputFileSection(Stage stage) {
         HBox hbox = new HBox();
         hbox.setSpacing(5);
@@ -152,35 +166,19 @@ public class CryptCounter extends Application {
         keyField.setPromptText("Input key here...");
         HBox.setHgrow(keyField, Priority.ALWAYS);
         
-        ComboBox<String> comboBox = new ComboBox<>();
-        comboBox.getItems().addAll("128 bit", "192 bit", "256 bit");
-        comboBox.setValue(comboBox.getItems().get(0));
-        comboBox.setOnAction((event) -> {
-            String selected = comboBox.getValue();
-            int maxLength = 128;
-            switch(selected) {
-                case "128 bit":
-                    maxLength = 128;
-                    break;
-                case "192 bit":
-                    maxLength = 192;
-                    break;
-                case "256 bit":
-                    maxLength = 256;
-                    break;
-                default:
-                    break;
-            }
-            keyField.setText(maxLength + " bit");
-        });
-        
         Button openKeyButton = new Button("...");
         openKeyButton.setOnAction((event) -> {
             FileChooser fileChooser = getFileChooser();
-            keyFile = fileChooser.showOpenDialog(stage);
+            File file = fileChooser.showOpenDialog(stage);
+            try {
+                key = Files.readAllLines(file.toPath()).get(0);
+                keyField.setText(key);
+            } catch (IOException ex) {
+                Logger.getLogger(CryptCounter.class.getName()).log(Level.SEVERE, null, ex);
+            }
         });
         
-        hbox.getChildren().addAll(keyField, comboBox, openKeyButton);
+        hbox.getChildren().addAll(keyField, openKeyButton);
         return hbox;
     }
     
@@ -210,7 +208,31 @@ public class CryptCounter extends Application {
         HBox hbox = new HBox();
         hbox.setSpacing(H_SPACING);
         Button encryptButton = new Button("Encrypt");
+        encryptButton.setOnAction((event) -> {
+            try {
+                byte[] value = readFile(inputFile);
+                byte[] key = stringToHex(CryptCounter.key);
+                byte[] result = AES_CTR_PKCS5Padding.encrypt(key, value);
+                Files.write(outputFile.toPath(), result, StandardOpenOption.CREATE);
+                logs.appendText("Encryption succeed\n");
+            } catch (Exception ex) {
+                Logger.getLogger(CryptCounter.class.getName()).log(Level.SEVERE, null, ex);
+                logs.appendText("Encryption failed\n");
+            }
+        });
         Button decryptButton = new Button("Decrypt");
+        decryptButton.setOnAction((event) -> {
+            try {
+                byte[] value = readFile(inputFile);
+                byte[] key = stringToHex(CryptCounter.key);
+                byte[] result = AES_CTR_PKCS5Padding.decrypt(key, value);
+                Files.write(outputFile.toPath(), result, StandardOpenOption.CREATE);
+                logs.appendText("Decrytion succeed\n");
+            } catch (Exception ex) {
+                Logger.getLogger(CryptCounter.class.getName()).log(Level.SEVERE, null, ex);
+                logs.appendText("Decryption failed\n");
+            }
+        });
         encryptButton.setMaxWidth(Double.MAX_VALUE);
         decryptButton.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(encryptButton, Priority.ALWAYS);
@@ -220,7 +242,7 @@ public class CryptCounter extends Application {
     }
     
     public static Node createFeedbackSection() {
-        TextArea feedbackArea = new TextArea("-- Crypt.Counter ver 0.8");
+        TextArea feedbackArea = new TextArea("-- Crypt.Counter ver 0.8\n");
         feedbackArea.setEditable(false);
         CryptCounter.logs = feedbackArea;
         return feedbackArea;
