@@ -42,7 +42,7 @@ public class CryptCounter extends Application {
     
     private static File inputFile = null;
     private static File outputFile = null;
-    private static String key = null;
+    private static TextField keyField = null;
     
     private static TextArea logs = null;
     
@@ -162,7 +162,7 @@ public class CryptCounter extends Application {
     public static Node createKeyInputSection(Stage stage) {
         HBox hbox = new HBox();
         hbox.setSpacing(H_SPACING);
-        TextField keyField = new TextField("128 bit");
+        keyField = new TextField("128 bit");
         keyField.setPromptText("Input key here...");
         HBox.setHgrow(keyField, Priority.ALWAYS);
         
@@ -171,8 +171,7 @@ public class CryptCounter extends Application {
             FileChooser fileChooser = getFileChooser();
             File file = fileChooser.showOpenDialog(stage);
             try {
-                key = Files.readAllLines(file.toPath()).get(0);
-                keyField.setText(key);
+                keyField.setText(Files.readAllLines(file.toPath()).get(0));
             } catch (IOException ex) {
                 Logger.getLogger(CryptCounter.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -211,12 +210,13 @@ public class CryptCounter extends Application {
         encryptButton.setOnAction((event) -> {
             try {
                 byte[] value = readFile(inputFile);
-                byte[] key = stringToHex(CryptCounter.key);
+                byte[] key = stringToHex(keyField.getText());
                 byte[] result = AES_CTR_PKCS5Padding.encrypt(key, value);
                 Files.write(outputFile.toPath(), result, StandardOpenOption.CREATE);
                 logs.appendText("Encryption succeed\n");
             } catch (Exception ex) {
-                Logger.getLogger(CryptCounter.class.getName()).log(Level.SEVERE, null, ex);
+                if(ex != null)
+                    logs.appendText(ex.getMessage());
                 logs.appendText("Encryption failed\n");
             }
         });
@@ -224,7 +224,7 @@ public class CryptCounter extends Application {
         decryptButton.setOnAction((event) -> {
             try {
                 byte[] value = readFile(inputFile);
-                byte[] key = stringToHex(CryptCounter.key);
+                byte[] key = stringToHex(keyField.getText());
                 byte[] result = AES_CTR_PKCS5Padding.decrypt(key, value);
                 Files.write(outputFile.toPath(), result, StandardOpenOption.CREATE);
                 logs.appendText("Decrytion succeed\n");
