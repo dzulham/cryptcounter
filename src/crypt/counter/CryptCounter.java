@@ -6,17 +6,13 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.stage.Stage;
 import javafx.scene.control.TextArea;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Text;
 
 import javax.crypto.NoSuchPaddingException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
-import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.ComboBox;
@@ -42,11 +38,14 @@ public class CryptCounter extends Application {
     
     private static File inputFile = null;
     private static File outputFile = null;
+    private static File keyFile = null;
+    
+    private static TextArea logs = null;
     
     @Override
     public void start(Stage primaryStage) {
         
-        primaryStage.setTitle("CryptCounter v0.5");
+        primaryStage.setTitle("Crypt.Counter v0.8");
         
         VBox base = (VBox) createBase();
         
@@ -60,7 +59,7 @@ public class CryptCounter extends Application {
         //----- File Management Section >-----
         
         //-----< Key and IV Input Section -----
-        Node keyInputSection = createKeyInputSection();
+        Node keyInputSection = createKeyInputSection(primaryStage);
         Node ivInputSection = createIVInputSection();
         VBox inputSectionBox = new VBox(keyInputSection, ivInputSection);
         inputSectionBox.setSpacing(V_SPACING);
@@ -72,9 +71,14 @@ public class CryptCounter extends Application {
         Node buttonsSection = createButtonsSection();
         //----- Action Buttons Section >-----
         
-        base.getChildren().addAll(fileSectionPane, inputSectionPane, buttonsSection);
+        //-----< Feedback Section -----
+        Node feedbackSection = createFeedbackSection();
+        TitledPane feedbackSectionPane = new TitledPane("Log", feedbackSection);
+        //----- Feedback Section >-----
         
-        Scene scene = new Scene(base, 400, 300);
+        base.getChildren().addAll(fileSectionPane, inputSectionPane, buttonsSection, feedbackSectionPane);
+        
+        Scene scene = new Scene(base, 450, 450);
         primaryStage.setResizable(false);
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -141,17 +145,18 @@ public class CryptCounter extends Application {
         return hbox;
     }
     
-    public static Node createKeyInputSection() {
+    public static Node createKeyInputSection(Stage stage) {
         HBox hbox = new HBox();
         hbox.setSpacing(H_SPACING);
         TextField keyField = new TextField("128 bit");
         keyField.setPromptText("Input key here...");
         HBox.setHgrow(keyField, Priority.ALWAYS);
-        ComboBox comboBox = new ComboBox();
+        
+        ComboBox<String> comboBox = new ComboBox<>();
         comboBox.getItems().addAll("128 bit", "192 bit", "256 bit");
-        comboBox.setValue("128 bit");
+        comboBox.setValue(comboBox.getItems().get(0));
         comboBox.setOnAction((event) -> {
-            String selected = comboBox.getValue().toString();
+            String selected = comboBox.getValue();
             int maxLength = 128;
             switch(selected) {
                 case "128 bit":
@@ -168,15 +173,21 @@ public class CryptCounter extends Application {
             }
             keyField.setText(maxLength + " bit");
         });
-        hbox.getChildren().addAll(keyField, comboBox);
+        
+        Button openKeyButton = new Button("...");
+        openKeyButton.setOnAction((event) -> {
+            FileChooser fileChooser = getFileChooser();
+            keyFile = fileChooser.showOpenDialog(stage);
+        });
+        
+        hbox.getChildren().addAll(keyField, comboBox, openKeyButton);
         return hbox;
     }
     
     public static Node createIVInputSection() {
         HBox hbox = new HBox();
         hbox.setSpacing(H_SPACING);
-        TextField ivField = new TextField();
-        ivField.setPromptText("Input IV value here...");
+        TextField ivField = new TextField(Arrays.toString(AES_CTR_PKCS5Padding.IV));
         ivField.setEditable(false);
         HBox.setHgrow(ivField, Priority.ALWAYS);
         Button genButton = new Button("Generate IV");
@@ -190,6 +201,7 @@ public class CryptCounter extends Application {
             }
             ivField.setText(Arrays.toString(AES_CTR_PKCS5Padding.IV));
         });
+        
         hbox.getChildren().addAll(ivField, genButton);
         return hbox;
     }
@@ -205,5 +217,12 @@ public class CryptCounter extends Application {
         HBox.setHgrow(decryptButton, Priority.ALWAYS);
         hbox.getChildren().addAll(encryptButton, decryptButton);
         return hbox;
+    }
+    
+    public static Node createFeedbackSection() {
+        TextArea feedbackArea = new TextArea("-- Crypt.Counter ver 0.8");
+        feedbackArea.setEditable(false);
+        CryptCounter.logs = feedbackArea;
+        return feedbackArea;
     }
 }
