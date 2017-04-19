@@ -10,22 +10,28 @@ import javax.crypto.spec.SecretKeySpec;
 
 public final class AES_CTR_PKCS5Padding 
 {
-    public static final String CIPHER_MODE = "AES/CTR/PKCS5PADDING";
+    public static final String CIPHER_ALGORITHM = "AES/CTR/PKCS5PADDING";
     public static Cipher CIPHER = null;
     public static byte[] IV;
 
-    public static void init() throws NoSuchAlgorithmException, NoSuchPaddingException 
+    public static void init() throws NoSuchAlgorithmException, NoSuchPaddingException
     {
-        CIPHER = Cipher.getInstance(AES_CTR_PKCS5Padding.CIPHER_MODE);
+        assertCIPHER();
         SecureRandom srandom = SecureRandom.getInstance("SHA1PRNG");
-        AES_CTR_PKCS5Padding.IV = new byte[CIPHER.getBlockSize()];
-        srandom.nextBytes(AES_CTR_PKCS5Padding.IV);
+        byte[] value = new byte[CIPHER.getBlockSize()];
+        AES_CTR_PKCS5Padding.init(value);
+        srandom.nextBytes(value);
+    }
+    
+    public static void init(byte[] IV) throws NoSuchAlgorithmException, NoSuchPaddingException {
+        assertCIPHER();
+        AES_CTR_PKCS5Padding.IV = IV;
     }
     
     private static void assertCIPHER() throws NoSuchAlgorithmException, NoSuchPaddingException 
     {
         if(CIPHER == null)
-            AES_CTR_PKCS5Padding.init();
+            CIPHER = Cipher.getInstance(AES_CTR_PKCS5Padding.CIPHER_ALGORITHM);
     }
     
     public static String encrypt(String key, String value) throws Exception
